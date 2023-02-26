@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -14,28 +13,27 @@ public class waveLi {
         wave(labirint, start);
         printArr2D(labirint);
         int[] exit = {0, 5};
-        String way = getExitWay(labirint, exit);
         System.out.println();
-        System.out.println(way);
+        System.out.println(Arrays.deepToString(getExitWay(labirint, exit)));
     }
 
     public static int[][] getLabirint(int x, int y, int wall) {
         int[][] lab = new int[x][y];
-        int[][] wallArr = getWall(wall);
-        for (int[] item : wallArr) {
-            lab[item[0]][item[1]] = -1;
+        int[] wallArr = new int[wall * 2];
+        Random rand = new Random();
+        for (int i = 0; i < wallArr.length; i += 2) {
+            int wallX = rand.nextInt(x);
+            int wallY = rand.nextInt(y);
+            // проверяем, что на данной позиции нет уже стены
+            if (lab[wallX][wallY] != -1) {
+                lab[wallX][wallY] = -1;
+                wallArr[i] = wallX;
+                wallArr[i+1] = wallY;
+            } else {
+                i -= 2; // повторяем итерацию, чтобы сгенерировать новые координаты
+            }
         }
         return lab;
-    }
-
-    private static int[][] getWall(int num) {
-        int[][] wallArr = new int[num][2];
-        Random rand = new Random();
-        for (int i = 0; i < wallArr.length; i++) {
-            wallArr[i][0] = rand.nextInt(10);
-            wallArr[i][1] = rand.nextInt(15);
-        }
-        return wallArr;
     }
 
     public static void printArr2D(int[][] arr) {
@@ -46,78 +44,62 @@ public class waveLi {
             System.out.println();
         }
     }
-
+   
     public static void wave(int[][] matrix, int[] start) {
         int count = 1;
         Queue<int[]> way = new LinkedList<>();
+        boolean[][] visited = new boolean[matrix.length][matrix[0].length];
         way.add(start);
+        visited[start[0]][start[1]] = true;
         matrix[start[0]][start[1]] = count;
         while (!way.isEmpty()) {
-            int[]step = way.remove();
-            
-            count = matrix[step[0]][step[1]];
-            if (step[0] != 0) {
-                if (matrix[step[0] - 1][step[1]] == 0) {
-                    int[] temp = {step[0] - 1, step[1]};
-                    way.add(temp);
-                    matrix[temp[0]][temp[1]] = count + 1;
-                }
-            }
-            if (step[1] != matrix[0].length - 1) {
-                if (matrix[step[0]][step[1] + 1] == 0) {
-                    int[] temp = {step[0], step[1] + 1};
-                    way.add(temp);
-                    matrix[temp[0]][temp[1]] = count + 1;
-                }
-            }
-            if (step[0] != matrix.length - 1) {
-                if (matrix[step[0] + 1][step[1]] == 0) {
-                    int[] temp = {step[0] + 1, step[1]};
-                    way.add(temp);
-                    matrix[temp[0]][temp[1]] = count + 1;
-                }
-            }
-            if (step[1] != 0) {
-                if (matrix[step[0]][step[1] - 1] == 0) {
-                    int[] temp = {step[0], step[1] - 1};
-                    way.add(temp);
-                    matrix[temp[0]][temp[1]] = count + 1;
+            int size = way.size();
+            for (int i = 0; i < size; i++) {
+                int[] step = way.remove();
+                count = matrix[step[0]][step[1]];
+                int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+                for (int[] dir : directions) {
+                    int row = step[0] + dir[0];
+                    int col = step[1] + dir[1];
+    
+                    if (row >= 0 && row < matrix.length && 
+                        col >= 0 && col < matrix[0].length &&
+                        !visited[row][col] && matrix[row][col] == 0) {
+                        int[] temp = {row, col};
+                        way.add(temp);
+                        visited[row][col] = true;
+                        matrix[row][col] = count + 1;
+                    }
                 }
             }
         }
     }
-
-    public static String getExitWay(int[][] matrix, int[] exit) {
-        String exitWay = new String();
+    
+    public static int[][] getExitWay(int[][] matrix, int[] exit) {
         int count = matrix[exit[0]][exit[1]];
         if (count < 1) {
             System.out.println("Выхода нет!! Тефтелька умрет от голода((");
-            return exitWay;
+            return new int[0][0];
         } else {
-            exitWay += Arrays.toString(exit);
-            int[] step = new int[2];
-                step[0] = exit[0];
-                step[1] = exit[1];
-            while (count > 1) {
-                if (step[0] != 0 && matrix[step[0] - 1][step[1]] == count - 1) {
+            int[][] exitWay = new int[count][2];
+            exitWay[0] = exit;
+            int[] step = Arrays.copyOf(exit, 2);
+            for (int i = 1; i < count; i++) {
+                if (step[0] != 0 && matrix[step[0] - 1][step[1]] == count - i) {
                     step[0] -= 1;
-                    exitWay += Arrays.toString(step);
-                    count --;
-                } else if (step[1] != matrix[0].length - 1 && matrix[step[0]][step[1] + 1] == count - 1) {
+                    exitWay[i] = Arrays.copyOf(step, 2);
+                } else if (step[1] != matrix[0].length - 1 && matrix[step[0]][step[1] + 1] == count - i) {
                     step[1] += 1;
-                    exitWay += Arrays.toString(step);
-                    count--;
-                } else if (step[0] != matrix.length - 1 && matrix[step[0] + 1][step[1]] == count - 1) {
+                    exitWay[i] = Arrays.copyOf(step, 2);
+                } else if (step[0] != matrix.length - 1 && matrix[step[0] + 1][step[1]] == count - i) {
                     step[0] += 1;
-                    exitWay += Arrays.toString(step);
-                    count--;
-                }  else if (step[1] != 0 && matrix[step[0]][step[1] - 1] == count - 1) {
+                    exitWay[i] = Arrays.copyOf(step, 2);
+                } else if (step[1] != 0 && matrix[step[0]][step[1] - 1] == count - i) {
                     step[1] -= 1;
-                    exitWay += Arrays.toString(step);
-                    count--;
+                    exitWay[i] = Arrays.copyOf(step, 2);
                 }
             }
+            return exitWay;
         }
-        return exitWay;
     }
 }
